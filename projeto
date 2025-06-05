@@ -1,0 +1,12 @@
+Documentação do Projeto: Machine Duel em Python com Pygame
+1. Visão Geral
+Tecnologia Utilizada: Python + Pygame
+Descrição: Implementação de um jogo de luta de robos.
+Objetivo: criar um estilo de jogo de luta entre robos (foco em primeira pessoa e por comando de voz).
+
+2. Descrição Detalhada do Projeto
+o que é o machine duel
+machine duel é um jgo de luta em primeira pessoa sobre robos num ringue o jogo roda em torno disso. 
+Curiosidade: machine duel sera feito totalmente por comando de voz.
+
+3
