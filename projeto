@@ -1,12 +1,62 @@
 Documentação do Projeto: Machine Duel em Python com Pygame
-1. Visão Geral
+1. VISÃO GERAL
 Tecnologia Utilizada: Python + Pygame
 Descrição: Implementação de um jogo de luta de robos.
 Objetivo: criar um estilo de jogo de luta entre robos (foco em primeira pessoa e por comando de voz).
 
-2. Descrição Detalhada do Projeto
+2. DESCRÇÃO DETALHADA DO PROJETO:
 o que é o machine duel
 machine duel é um jgo de luta em primeira pessoa sobre robos num ringue o jogo roda em torno disso. 
 Curiosidade: machine duel sera feito totalmente por comando de voz.
 
-3
+2.1 MOTOR DO JOGO:
+
+luta envolvendo dois robos.
+dentro de um ringue(ou um mapa co abiente). 
+detectar movento e colisão.
+
+INTERFACE GRAFICA:
+
+um ringue convecional de lutas profissionais.
+tela de perçoalisaão de personagem.
+barra de hp(muda a condição do persoagem).
+
+2.2 ARQUITETURA DO CODIGO:
+
+      jogo_luta/
+      │
+      ├── main.py              ◄── Loop principal e inicialização do jogo
+      ├── config.py            ◄── Constantes globais (tela, cores, fontes)
+      ├── game.py              ◄── Classe principal que gerencia o jogo
+      │
+      ├── entities/
+      │   └── fighter.py       ◄── Classe Fighter (jogador e inimigo)
+      │
+      ├── ui/
+      │   └── healthbar.py     ◄── (opcional) Classe para barra de vida
+      │
+      └── assets/              ◄── Pasta para sprites, sons, fontes, etc.
+3. ETAPAS DE ENTREGA (Cronograma Detalhado):
+
+ETAPA 1:prototipo basico(priemiro bimestre)
+arquitetura de codigo. 
+preparo de design.
+documentação do preocesso.
+
+ETAPA 2: Lógica do Jogo (Segubndo bimestre)
+implementação do codigo.
+detecção de movimento.
+controle dos jogadores(mouse/teclado)
+implementação de desing.
+
+ETAPA 3: POLIMENTO(terceiro bimestre)
+menu inicial personalisação de personagem.
+efeitos sonoros.
+sistema de resompensa.
+sistema de fases.
+
+ETAPA 4:TESTES E ENTREGA FINAL:(4 bimestre):
+testes do jogo.
+correção de bugs.
+documentação final(README.md + comentários no código).
+
