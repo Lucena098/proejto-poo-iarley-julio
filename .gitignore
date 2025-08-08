@@ -1,80 +1,123 @@
 import pygame
 import sys
 
-pygame.init()
-
-# Configurações de tela
-SCREEN_WIDTH = 600
-SCREEN_HEIGHT = 400
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Menu - Jogo da Velha 2D")
-
-# Cores
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GRAY = (50, 50, 50)
-HOVER_COLOR = (70, 130, 180)
+# ================= CONFIGURAÇÕES =================
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
 BG_COLOR = (30, 30, 30)
 
-# Fonte
-pygame.font.init()
-title_font = pygame.font.SysFont("arial", 48, bold=True)
-button_font = pygame.font.SysFont("arial", 32)
+BOARD_SIZE = 9     # tamanho do tabuleiro 
+CELL_SIZE = 50
+LINE_COLOR = (200, 200, 200)
 
-# Botões
-buttons = [
-    {"text": "Jogar", "rect": pygame.Rect(SCREEN_WIDTH//2 - 100, 180, 200, 50), "action": "start"},
-    {"text": "Sair", "rect": pygame.Rect(SCREEN_WIDTH//2 - 100, 260, 200, 50), "action": "quit"}
-]
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+PLAYER_X_COLOR = (255, 50, 50)
+PLAYER_O_COLOR = (50, 50, 255)
 
-def draw_menu():
-    # Fundo
+PLAYERS = ["X", "O"]
+
+# ================= CLASSES =================
+class Player:
+    def __init__(self, symbol, color):
+        self.symbol = symbol
+        self.color = color
+
+class Game:
+    def __init__(self, screen):
+        self.screen = screen
+        self.board = [["" for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
+        self.players = [
+            Player("X", PLAYER_X_COLOR),
+            Player("O", PLAYER_O_COLOR)
+        ]
+        self.current_player = 0
+
+    def handle_click(self, pos):
+        col = pos[0] // CELL_SIZE
+        row = pos[1] // CELL_SIZE
+        if row < BOARD_SIZE and col < BOARD_SIZE and self.board[row][col] == "":
+            self.board[row][col] = self.players[self.current_player].symbol
+            self.current_player = (self.current_player + 1) % len(self.players)
+
+    def update(self):
+        draw_board(self.screen, self.board)
+
+# ================= FUNÇÕES DE RENDERIZAÇÃO =================
+def draw_board(screen, board):
     screen.fill(BG_COLOR)
+    # Linhas
+    for i in range(BOARD_SIZE + 1):
+        pygame.draw.line(screen, LINE_COLOR, (i * CELL_SIZE, 0), (i * CELL_SIZE, BOARD_SIZE * CELL_SIZE), 2)
+        pygame.draw.line(screen, LINE_COLOR, (0, i * CELL_SIZE), (BOARD_SIZE * CELL_SIZE, i * CELL_SIZE), 2)
 
-    # Título
-    title_surface = title_font.render("Jogo da Velha", True, WHITE)
-    screen.blit(title_surface, (SCREEN_WIDTH//2 - title_surface.get_width()//2, 80))
+    # Símbolos
+    font = pygame.font.SysFont("arial", CELL_SIZE // 2, bold=True)
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE):
+            if board[row][col] != "":
+                text = font.render(board[row][col], True,
+                                   PLAYER_X_COLOR if board[row][col] == "X" else PLAYER_O_COLOR)
+                screen.blit(text, (col * CELL_SIZE + CELL_SIZE//3, row * CELL_SIZE + CELL_SIZE//4))
 
-    # Botões
+# ================= MENU =================
+def draw_menu(screen):
+    screen.fill(BG_COLOR)
+    font = pygame.font.SysFont("arial", 48, bold=True)
+    button_font = pygame.font.SysFont("arial", 32)
+
+    title = font.render("Jogo da Velha 2", True, WHITE)
+    screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 100))
+
+    play_button = pygame.Rect(SCREEN_WIDTH//2 - 100, 250, 200, 50)
+    quit_button = pygame.Rect(SCREEN_WIDTH//2 - 100, 320, 200, 50)
+
     mouse_pos = pygame.mouse.get_pos()
-    for button in buttons:
-        # Mudar cor se mouse estiver em cima
-        if button["rect"].collidepoint(mouse_pos):
-            pygame.draw.rect(screen, HOVER_COLOR, button["rect"], border_radius=10)
-        else:
-            pygame.draw.rect(screen, GRAY, button["rect"], border_radius=10)
+    for rect, text in [(play_button, "Jogar"), (quit_button, "Sair")]:
+        color = (70, 130, 180) if rect.collidepoint(mouse_pos) else (50, 50, 50)
+        pygame.draw.rect(screen, color, rect, border_radius=10)
+        pygame.draw.rect(screen, WHITE, rect, 2, border_radius=10)
+        label = button_font.render(text, True, WHITE)
+        screen.blit(label, (rect.x + rect.width//2 - label.get_width()//2,
+                            rect.y + rect.height//2 - label.get_height()//2))
+    return play_button, quit_button
 
-        # Borda
-        pygame.draw.rect(screen, WHITE, button["rect"], 2, border_radius=10)
-
-        # Texto
-        text_surface = button_font.render(button["text"], True, WHITE)
-        screen.blit(text_surface, (
-            button["rect"].x + button["rect"].width//2 - text_surface.get_width()//2,
-            button["rect"].y + button["rect"].height//2 - text_surface.get_height()//2
-        ))
-
-def menu_loop():
+def menu_loop(screen):
     while True:
+        play_button, quit_button = draw_menu(screen)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-
             if event.type == pygame.MOUSEBUTTONDOWN:
-                for button in buttons:
-                    if button["rect"].collidepoint(event.pos):
-                        if button["action"] == "start":
-                            print("Iniciando o jogo...")
-                            return "start"
-                        elif button["action"] == "quit":
-                            pygame.quit()
-                            sys.exit()
-
-        draw_menu()
+                if play_button.collidepoint(event.pos):
+                    return "start"
+                elif quit_button.collidepoint(event.pos):
+                    pygame.quit()
+                    sys.exit()
         pygame.display.flip()
 
-# Teste do menu
+# ================= LOOP PRINCIPAL =================
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Jogo da Velha 2")
+
+    choice = menu_loop(screen)
+    if choice == "start":
+        game = Game(screen)
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    game.handle_click(event.pos)
+
+            game.update()
+            pygame.display.flip()
+
+    pygame.quit()
+
 if __name__ == "__main__":
-    escolha = menu_loop()
-    print("Opção escolhida:", escolha)
+    main()
