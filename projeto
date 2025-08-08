@@ -1,41 +1,42 @@
 Documentação do Projeto: Machine Duel em Python com Pygame
 1. VISÃO GERAL
 Tecnologia Utilizada: Python + Pygame
-Descrição: Implementação de um jogo de luta de robos.
-Objetivo: criar um estilo de jogo de luta entre robos (foco em primeira pessoa e por comando de voz).
+Descrição: Implementação de um jogo da velha 2.
+Objetivo: criar um estilo de jogo da velha mais dinamico e divertido ().
 
 2. DESCRÇÃO DETALHADA DO PROJETO:
-o que é o machine duel
-machine duel é um jgo de luta em primeira pessoa sobre robos num ringue o jogo roda em torno disso. 
-Curiosidade: machine duel sera feito totalmente por comando de voz.
+o que é o jogo da velha 2
+Como funciona:
+Em vez de um tabuleiro 3x3 plano, o jogo tem 3 camadas (3x3x3).
+O jogador precisa alinhar 3 símbolos em linha reta em qualquer dimensão (horizontal, vertical, diagonal ou entre camadas).
+Dificuldade aumentada: Mais estratégia e visão espacial necessárias.
 
 2.1 MOTOR DO JOGO:
 
-luta envolvendo dois robos.
-dentro de um ringue(ou um mapa co abiente). 
-detectar movento e colisão.
+o jogo vai ter um campo maior que o tradicional.
+podera ser jogado por mais de dois jogadores
 
 INTERFACE GRAFICA:
 
-um ringue convecional de lutas profissionais.
-tela de perçoalisaão de personagem.
-barra de hp(muda a condição do persoagem).
+um tabuleiro por volta de 9x9 ou mais.
+podendo personalisar o tabuleiro.
+
 
 2.2 ARQUITETURA DO CODIGO:
 
-      jogo_luta/
+     jogo_velha_3d/
       │
-      ├── main.py              ◄── Loop principal e inicialização do jogo
-      ├── config.py            ◄── Constantes globais (tela, cores, fontes)
-      ├── game.py              ◄── Classe principal que gerencia o jogo
+      ├── main.py              ◄── Loop principal e inicialização
+      ├── config.py            ◄── Constantes (tamanho do tabuleiro, símbolos)
+      ├── game.py              ◄── Classe principal do jogo (lógica e estado)
       │
-      ├── entities/
-      │   └── fighter.py       ◄── Classe Fighter (jogador e inimigo)
+      ├── players/
+      │   └── player.py        ◄── Classe Player (opcional, para multiplayer futuro)
       │
       ├── ui/
-      │   └── healthbar.py     ◄── (opcional) Classe para barra de vida
+      │   └── render.py        ◄── Renderização do tabuleiro e mensagens
       │
-      └── assets/              ◄── Pasta para sprites, sons, fontes, etc.
+      └── assets/              ◄── (opcional) Fontes, sons, ícones
 3. ETAPAS DE ENTREGA (Cronograma Detalhado):
 
 ETAPA 1:prototipo basico(priemiro bimestre)
