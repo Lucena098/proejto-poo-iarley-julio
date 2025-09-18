@@ -2,54 +2,30 @@ import pygame
 import sys
 
 # ================= CONFIGURAÇÕES =================
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 600
+SCREEN_WIDTH = 600
+SCREEN_HEIGHT = 700
 BG_COLOR = (30, 30, 30)
 
-BOARD_SIZE = 9     # tamanho do tabuleiro 
-CELL_SIZE = 50
+BOARD_SIZE = 9
+CELL_SIZE = SCREEN_WIDTH // BOARD_SIZE
 LINE_COLOR = (200, 200, 200)
 
 WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
 PLAYER_X_COLOR = (255, 50, 50)
 PLAYER_O_COLOR = (50, 50, 255)
 
-PLAYERS = ["X", "O"]
-
-# ================= CLASSES =================
-class Player:
-    def __init__(self, symbol, color):
-        self.symbol = symbol
-        self.color = color
-
-class Game:
-    def __init__(self, screen):
-        self.screen = screen
-        self.board = [["" for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
-        self.players = [
-            Player("X", PLAYER_X_COLOR),
-            Player("O", PLAYER_O_COLOR)
-        ]
-        self.current_player = 0
-
-    def handle_click(self, pos):
-        col = pos[0] // CELL_SIZE
-        row = pos[1] // CELL_SIZE
-        if row < BOARD_SIZE and col < BOARD_SIZE and self.board[row][col] == "":
-            self.board[row][col] = self.players[self.current_player].symbol
-            self.current_player = (self.current_player + 1) % len(self.players)
-
-    def update(self):
-        draw_board(self.screen, self.board)
-
-# ================= FUNÇÕES DE RENDERIZAÇÃO =================
-def draw_board(screen, board):
+# ================= FUNÇÕES =================
+def draw_board(screen, board, scores):
     screen.fill(BG_COLOR)
-    # Linhas
+
+    # Linhas do tabuleiro
     for i in range(BOARD_SIZE + 1):
-        pygame.draw.line(screen, LINE_COLOR, (i * CELL_SIZE, 0), (i * CELL_SIZE, BOARD_SIZE * CELL_SIZE), 2)
-        pygame.draw.line(screen, LINE_COLOR, (0, i * CELL_SIZE), (BOARD_SIZE * CELL_SIZE, i * CELL_SIZE), 2)
+        pygame.draw.line(screen, LINE_COLOR,
+                         (i * CELL_SIZE, 0),
+                         (i * CELL_SIZE, BOARD_SIZE * CELL_SIZE), 2)
+        pygame.draw.line(screen, LINE_COLOR,
+                         (0, i * CELL_SIZE),
+                         (BOARD_SIZE * CELL_SIZE, i * CELL_SIZE), 2)
 
     # Símbolos
     font = pygame.font.SysFont("arial", CELL_SIZE // 2, bold=True)
@@ -58,66 +34,96 @@ def draw_board(screen, board):
             if board[row][col] != "":
                 text = font.render(board[row][col], True,
                                    PLAYER_X_COLOR if board[row][col] == "X" else PLAYER_O_COLOR)
-                screen.blit(text, (col * CELL_SIZE + CELL_SIZE//3, row * CELL_SIZE + CELL_SIZE//4))
+                screen.blit(text, (col * CELL_SIZE + CELL_SIZE//3,
+                                   row * CELL_SIZE + CELL_SIZE//4))
 
-# ================= MENU =================
-def draw_menu(screen):
-    screen.fill(BG_COLOR)
-    font = pygame.font.SysFont("arial", 48, bold=True)
-    button_font = pygame.font.SysFont("arial", 32)
+    # Placar
+    score_font = pygame.font.SysFont("arial", 28, bold=True)
+    score_text = score_font.render(f"Jogador X: {scores['X']}  |  Jogador O: {scores['O']}",
+                                   True, WHITE)
+    screen.blit(score_text, (20, SCREEN_HEIGHT - 80))
 
-    title = font.render("Jogo da Velha 2", True, WHITE)
-    screen.blit(title, (SCREEN_WIDTH//2 - title.get_width()//2, 100))
+def check_new_triples(board, player, scored_positions):
+    """Retorna quantos pontos novos o jogador fez ao completar trincas"""
+    new_points = 0
+    new_scored = []
 
-    play_button = pygame.Rect(SCREEN_WIDTH//2 - 100, 250, 200, 50)
-    quit_button = pygame.Rect(SCREEN_WIDTH//2 - 100, 320, 200, 50)
+    # Horizontal
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE - 2):
+            if board[row][col] == board[row][col+1] == board[row][col+2] == player:
+                triple = (row, col, "H")
+                if triple not in scored_positions:
+                    new_points += 1
+                    new_scored.append(triple)
 
-    mouse_pos = pygame.mouse.get_pos()
-    for rect, text in [(play_button, "Jogar"), (quit_button, "Sair")]:
-        color = (70, 130, 180) if rect.collidepoint(mouse_pos) else (50, 50, 50)
-        pygame.draw.rect(screen, color, rect, border_radius=10)
-        pygame.draw.rect(screen, WHITE, rect, 2, border_radius=10)
-        label = button_font.render(text, True, WHITE)
-        screen.blit(label, (rect.x + rect.width//2 - label.get_width()//2,
-                            rect.y + rect.height//2 - label.get_height()//2))
-    return play_button, quit_button
+    # Vertical
+    for col in range(BOARD_SIZE):
+        for row in range(BOARD_SIZE - 2):
+            if board[row][col] == board[row+1][col] == board[row+2][col] == player:
+                triple = (row, col, "V")
+                if triple not in scored_positions:
+                    new_points += 1
+                    new_scored.append(triple)
 
-def menu_loop(screen):
-    while True:
-        play_button, quit_button = draw_menu(screen)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if play_button.collidepoint(event.pos):
-                    return "start"
-                elif quit_button.collidepoint(event.pos):
-                    pygame.quit()
-                    sys.exit()
+    # Diagonal ↘
+    for row in range(BOARD_SIZE - 2):
+        for col in range(BOARD_SIZE - 2):
+            if board[row][col] == board[row+1][col+1] == board[row+2][col+2] == player:
+                triple = (row, col, "D1")
+                if triple not in scored_positions:
+                    new_points += 1
+                    new_scored.append(triple)
+
+    # Diagonal ↙
+    for row in range(BOARD_SIZE - 2):
+        for col in range(2, BOARD_SIZE):
+            if board[row][col] == board[row+1][col-1] == board[row+2][col-2] == player:
+                triple = (row, col, "D2")
+                if triple not in scored_positions:
+                    new_points += 1
+                    new_scored.append(triple)
+
+    return new_points, new_scored
+
+def game_loop(screen):
+    board = [["" for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
+    current_player = "X"
+    scores = {"X": 0, "O": 0}
+    scored_positions = []  # Guarda trincas já contadas
+
+    running = True
+    while running:
+        draw_board(screen, board, scores)
         pygame.display.flip()
 
-# ================= LOOP PRINCIPAL =================
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = pygame.mouse.get_pos()
+                col = x // CELL_SIZE
+                row = y // CELL_SIZE
+
+                if row < BOARD_SIZE and col < BOARD_SIZE:
+                    if board[row][col] == "":
+                        board[row][col] = current_player
+                        # Checar novos pontos
+                        gained, new_scored = check_new_triples(board, current_player, scored_positions)
+                        scores[current_player] += gained
+                        scored_positions.extend(new_scored)
+                        # Trocar jogador
+                        current_player = "O" if current_player == "X" else "X"
+
+# ================= MAIN =================
 def main():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Jogo da Velha 2")
-
-    choice = menu_loop(screen)
-    if choice == "start":
-        game = Game(screen)
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    game.handle_click(event.pos)
-
-            game.update()
-            pygame.display.flip()
-
-    pygame.quit()
+    pygame.display.set_caption("Jogo da Velha 9x9 com Placar")
+    game_loop(screen)
 
 if __name__ == "__main__":
     main()
