@@ -7,8 +7,8 @@ Objetivo: criar um estilo de jogo da velha mais dinamico e divertido ().
 2. DESCRÇÃO DETALHADA DO PROJETO:
 o que é o jogo da velha 2
 Como funciona:
-Em vez de um tabuleiro 3x3 plano, o jogo tem 3 camadas (3x3x3).
-O jogador precisa alinhar 3 símbolos em linha reta em qualquer dimensão (horizontal, vertical, diagonal ou entre camadas).
+Em vez de um tabuleiro 3x3 plano, o jogo tem 9x9.
+O jogador precisa alinhar 3 símbolos em linha reta em qualquer dimensão (horizontal, vertical, diagonal ).
 Dificuldade aumentada: Mais estratégia e visão espacial necessárias.
 
 2.1 MOTOR DO JOGO:
@@ -39,25 +39,36 @@ podendo personalisar o tabuleiro.
       └── assets/              ◄── (opcional) Fontes, sons, ícones
 3. ETAPAS DE ENTREGA (Cronograma Detalhado):
 
-ETAPA 1:prototipo basico(priemiro bimestre)
+27/09 :prototipo basico:
 arquitetura de codigo. 
-preparo de design.
 documentação do preocesso.
+implementação do codigo.
 
-ETAPA 2: Lógica do Jogo (Segubndo bimestre)
+04/10 Lógica do Jogo 
 implementação do codigo.
 detecção de movimento.
-controle dos jogadores(mouse/teclado)
+controle dos jogadores(mouse)
 implementação de desing.
 
-ETAPA 3: POLIMENTO(terceiro bimestre)
-menu inicial personalisação de personagem.
+11/10: POLIMENTo
+menu inicial.
 efeitos sonoros.
-sistema de resompensa.
-sistema de fases.
+desing devidamente corrigido e pronto
 
-ETAPA 4:TESTES E ENTREGA FINAL:(4 bimestre):
+18/10:TESTES:
 testes do jogo.
 correção de bugs.
 documentação final(README.md + comentários no código).
+
+25/10:EMERGENCIA:
+caso o prazo não seja sufienciente utilisamos 
+essa data como recurso para conseguir entregar ate o final do prazo
+
+01/11:ENTREGA:
+codigo completamente emplementado.
+design nos padrões. 
+trilha sonora pronta.
+jogo em funcionamento.
+
+
 
