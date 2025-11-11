@@ -1,17 +1,88 @@
+MAIN.PY
 import pygame
 import sys
-import math
 from datetime import datetime
 
-# ================= CONFIGURAÇÕES =================
+from config import *
+from ultilis import format_game_time
+from render_borda import draw_board
+from logica_jogo import check_new_triples, is_board_full
+from telas import main_menu, scores_screen
+
+class Game:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption("Jogo da Velha 9x9 - PLACAR SUPREMO")
+        self.scores_history = []
+    
+    def run(self):
+        while True:
+            menu_choice = main_menu(self.screen)
+            
+            if menu_choice == "play":
+                self.game_loop()
+            elif menu_choice == "scores":
+                scores_screen(self.screen, self.scores_history)
+            elif menu_choice == "quit":
+                pygame.quit()
+                sys.exit()
+    
+    def game_loop(self):
+        board = [["" for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
+        current_player = "X"
+        scores = {"X": 0, "O": 0}
+        scored_positions = []
+        start_time = pygame.time.get_ticks()
+
+        running = True
+        while running:
+            game_time = format_game_time(start_time)
+            draw_board(self.screen, board, scores, current_player, game_time)
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    x, y = pygame.mouse.get_pos()
+                    col = (x - BOARD_MARGIN) // CELL_SIZE
+                    row = y // CELL_SIZE
+
+                    if 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE:
+                        if board[row][col] == "":
+                            board[row][col] = current_player
+                            gained, new_scored = check_new_triples(board, current_player, scored_positions)
+                            scores[current_player] += gained
+                            scored_positions.extend(new_scored)
+                            
+                            if is_board_full(board):
+                                self.scores_history.append({
+                                    'X': scores['X'],
+                                    'O': scores['O'],
+                                    'date': datetime.now().strftime("%H:%M %d/%m")
+                                })
+                                return
+                            
+                            current_player = "O" if current_player == "X" else "X"
+
+if __name__ == "__main__":
+    game = Game()
+    game.run()
+
+CONFIG.PY
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 900
 BOARD_SIZE = 9
 CELL_SIZE = 600 // BOARD_SIZE
 BOARD_MARGIN = (SCREEN_WIDTH - 600) // 2
+
+# Cores
 BG_COLOR = (25, 25, 35)
 LINE_COLOR = (180, 180, 200)
-
 WHITE = (255, 255, 255)
 BLACK = (25, 25, 35)
 PLAYER_X_COLOR = (255, 80, 80)
@@ -21,8 +92,11 @@ BUTTON_HOVER_COLOR = (90, 90, 130)
 MENU_BG_COLOR = (35, 35, 55)
 SCORE_BG_COLOR = (40, 40, 70)
 SCORE_BORDER_COLOR = (120, 120, 180)
+ULTILIS.PY
+import pygame
+import math
+from config import *
 
-# ================= FUNÇÕES AUXILIARES =================
 def draw_text(surface, text, size, x, y, color=WHITE, centered=True):
     font = pygame.font.SysFont("arial", size, bold=True)
     text_surface = font.render(text, True, color)
@@ -48,7 +122,18 @@ def draw_button(surface, text, x, y, width, height, color=BUTTON_COLOR, hover_co
     
     return button_rect
 
-# ================= PLACAR MELHORADO =================
+def format_game_time(start_time):
+    elapsed = pygame.time.get_ticks() - start_time
+    seconds = elapsed // 1000
+    minutes = seconds // 60
+    seconds = seconds % 60
+    return f"{minutes:02d}:{seconds:02d}"
+PONTOS.PY
+import pygame
+import math
+from config import *
+from ultilis import draw_text
+
 def draw_modern_scoreboard(screen, scores, current_player, game_time):
     scoreboard_y = 620
     scoreboard_height = 250
@@ -63,124 +148,75 @@ def draw_modern_scoreboard(screen, scores, current_player, game_time):
                     (SCREEN_WIDTH // 2, scoreboard_y + 20),
                     (SCREEN_WIDTH // 2, scoreboard_y + scoreboard_height - 20), 3)
     
-    # ===== JOGADOR X =====
-    x_score_x = SCREEN_WIDTH // 4
+    # Desenhar jogadores
+    _draw_player_section(screen, "X", SCREEN_WIDTH // 4, scoreboard_y, scores['X'], current_player)
+    _draw_player_section(screen, "O", 3 * SCREEN_WIDTH // 4, scoreboard_y, scores['O'], current_player)
     
-    # Cabeçalho do jogador X
-    player_x_bg = pygame.Rect(x_score_x - 120, scoreboard_y + 30, 240, 50)
-    pygame.draw.rect(screen, PLAYER_X_COLOR, player_x_bg, border_radius=12)
-    pygame.draw.rect(screen, (255, 150, 150), player_x_bg, 3, border_radius=12)
-    draw_text(screen, "JOGADOR X", 28, x_score_x, scoreboard_y + 55, WHITE)
+    # Informações centrais
+    _draw_center_info(screen, scores, game_time, scoreboard_y)
+
+def _draw_player_section(screen, player, x_pos, scoreboard_y, score, current_player):
+    # Cabeçalho do jogador
+    color = PLAYER_X_COLOR if player == "X" else PLAYER_O_COLOR
+    highlight_color = (255, 150, 150) if player == "X" else (150, 200, 255)
     
-    # Pontuação
-    score_x_pos = scoreboard_y + 130
-    draw_text(screen, str(scores['X']), 72, x_score_x, score_x_pos, PLAYER_X_COLOR)
-    draw_text(screen, "PONTOS", 22, x_score_x, score_x_pos + 50, (200, 200, 200))
-    
-    # ===== JOGADOR O =====
-    o_score_x = 3 * SCREEN_WIDTH // 4
-    
-    # Cabeçalho do jogador O
-    player_o_bg = pygame.Rect(o_score_x - 120, scoreboard_y + 30, 240, 50)
-    pygame.draw.rect(screen, PLAYER_O_COLOR, player_o_bg, border_radius=12)
-    pygame.draw.rect(screen, (150, 200, 255), player_o_bg, 3, border_radius=12)
-    draw_text(screen, "JOGADOR O", 28, o_score_x, scoreboard_y + 55, WHITE)
+    player_bg = pygame.Rect(x_pos - 120, scoreboard_y + 30, 240, 50)
+    pygame.draw.rect(screen, color, player_bg, border_radius=12)
+    pygame.draw.rect(screen, highlight_color, player_bg, 3, border_radius=12)
+    draw_text(screen, f"JOGADOR {player}", 28, x_pos, scoreboard_y + 55, WHITE)
     
     # Pontuação
-    draw_text(screen, str(scores['O']), 72, o_score_x, score_x_pos, PLAYER_O_COLOR)
-    draw_text(screen, "PONTOS", 22, o_score_x, score_x_pos + 50, (200, 200, 200))
+    score_y = scoreboard_y + 130
+    draw_text(screen, str(score), 72, x_pos, score_y, color)
+    draw_text(screen, "PONTOS", 22, x_pos, score_y + 50, (200, 200, 200))
     
-    # ===== INDICADOR "SUA VEZ!" SUPER MELHORADO =====
+    # Indicador "SUA VEZ!"
+    if current_player == player:
+        _draw_turn_indicator(screen, x_pos, scoreboard_y + 190)
+
+def _draw_turn_indicator(screen, x, y):
+    # Efeito de pulso
+    pulse = abs(pygame.time.get_ticks() % 1000 - 500) / 500
+    pulse_size = 20 + int(pulse * 10)
     
-    # JOGADOR X
-    if current_player == "X":
-        indicator_x = x_score_x
-        indicator_y = scoreboard_y + 190
-        
-        # Efeito de pulso
-        pulse = abs(pygame.time.get_ticks() % 1000 - 500) / 500
-        pulse_size = 20 + int(pulse * 10)
-        
-        # Círculo externo pulsante
-        for r in range(pulse_size, pulse_size - 8, -2):
-            alpha = 150 - (pulse_size - r) * 20
-            pygame.draw.circle(screen, (255, 255, 0), (indicator_x, indicator_y), r, 3)
-        
-        # Círculo principal
-        pygame.draw.circle(screen, (255, 255, 0), (indicator_x, indicator_y), 15)
-        pygame.draw.circle(screen, (255, 200, 0), (indicator_x, indicator_y), 12)
-        
-        # Efeito de raios brilhantes
-        for angle in range(0, 360, 45):
-            rad = angle * math.pi / 180
-            start_x = indicator_x + 18 * math.cos(rad)
-            start_y = indicator_y + 18 * math.sin(rad)
-            end_x = indicator_x + 25 * math.cos(rad)
-            end_y = indicator_y + 25 * math.sin(rad)
-            pygame.draw.line(screen, (255, 255, 100), (start_x, start_y), (end_x, end_y), 3)
-        
-        # Fundo para o texto
-        text_bg = pygame.Rect(indicator_x - 60, indicator_y + 25, 120, 30)
-        pygame.draw.rect(screen, (255, 200, 0), text_bg, border_radius=8)
-        pygame.draw.rect(screen, (255, 255, 100), text_bg, 2, border_radius=8)
-        
-        # Texto
-        draw_text(screen, "SUA VEZ!", 22, indicator_x, indicator_y + 40, (50, 30, 0))
-        
-        # Partículas ao redor
-        for i in range(6):
-            angle = (pygame.time.get_ticks() / 100 + i * 60) % 360
-            rad = angle * math.pi / 180
-            dist = 35 + math.sin(pygame.time.get_ticks() / 200 + i) * 5
-            part_x = indicator_x + dist * math.cos(rad)
-            part_y = indicator_y + dist * math.sin(rad)
-            pygame.draw.circle(screen, (255, 255, 100), (int(part_x), int(part_y)), 3)
+    # Círculo externo pulsante
+    for r in range(pulse_size, pulse_size - 8, -2):
+        pygame.draw.circle(screen, (255, 255, 0), (x, y), r, 3)
     
-    # JOGADOR O
-    if current_player == "O":
-        indicator_x = o_score_x
-        indicator_y = scoreboard_y + 190
-        
-        # Efeito de pulso
-        pulse = abs(pygame.time.get_ticks() % 1000 - 500) / 500
-        pulse_size = 20 + int(pulse * 10)
-        
-        # Círculo externo pulsante
-        for r in range(pulse_size, pulse_size - 8, -2):
-            alpha = 150 - (pulse_size - r) * 20
-            pygame.draw.circle(screen, (255, 255, 0), (indicator_x, indicator_y), r, 3)
-        
-        # Círculo principal
-        pygame.draw.circle(screen, (255, 255, 0), (indicator_x, indicator_y), 15)
-        pygame.draw.circle(screen, (255, 200, 0), (indicator_x, indicator_y), 12)
-        
-        # Efeito de raios brilhantes
-        for angle in range(0, 360, 45):
-            rad = angle * math.pi / 180
-            start_x = indicator_x + 18 * math.cos(rad)
-            start_y = indicator_y + 18 * math.sin(rad)
-            end_x = indicator_x + 25 * math.cos(rad)
-            end_y = indicator_y + 25 * math.sin(rad)
-            pygame.draw.line(screen, (255, 255, 100), (start_x, start_y), (end_x, end_y), 3)
-        
-        # Fundo para o texto
-        text_bg = pygame.Rect(indicator_x - 60, indicator_y + 25, 120, 30)
-        pygame.draw.rect(screen, (255, 200, 0), text_bg, border_radius=8)
-        pygame.draw.rect(screen, (255, 255, 100), text_bg, 2, border_radius=8)
-        
-        # Texto
-        draw_text(screen, "SUA VEZ!", 22, indicator_x, indicator_y + 40, (50, 30, 0))
-        
-        # Partículas ao redor
-        for i in range(6):
-            angle = (pygame.time.get_ticks() / 100 + i * 60) % 360
-            rad = angle * math.pi / 180
-            dist = 35 + math.sin(pygame.time.get_ticks() / 200 + i) * 5
-            part_x = indicator_x + dist * math.cos(rad)
-            part_y = indicator_y + dist * math.sin(rad)
-            pygame.draw.circle(screen, (255, 255, 100), (int(part_x), int(part_y)), 3)
+    # Círculo principal
+    pygame.draw.circle(screen, (255, 255, 0), (x, y), 15)
+    pygame.draw.circle(screen, (255, 200, 0), (x, y), 12)
     
-    # ===== INFORMAÇÕES CENTRAIS =====
+    # Efeito de raios brilhantes
+    for angle in range(0, 360, 45):
+        rad = angle * math.pi / 180
+        start_x = x + 18 * math.cos(rad)
+        start_y = y + 18 * math.sin(rad)
+        end_x = x + 25 * math.cos(rad)
+        end_y = y + 25 * math.sin(rad)
+        pygame.draw.line(screen, (255, 255, 100), (start_x, start_y), (end_x, end_y), 3)
+    
+    # Fundo para o texto
+    text_bg = pygame.Rect(x - 60, y + 25, 120, 30)
+    pygame.draw.rect(screen, (255, 200, 0), text_bg, border_radius=8)
+    pygame.draw.rect(screen, (255, 255, 100), text_bg, 2, border_radius=8)
+    
+    # Texto
+    draw_text(screen, "SUA VEZ!", 22, x, y + 40, (50, 30, 0))
+    
+    # Partículas ao redor
+    _draw_particles(screen, x, y)
+
+def _draw_particles(screen, x, y):
+    for i in range(6):
+        angle = (pygame.time.get_ticks() / 100 + i * 60) % 360
+        rad = angle * math.pi / 180
+        dist = 35 + math.sin(pygame.time.get_ticks() / 200 + i) * 5
+        part_x = x + dist * math.cos(rad)
+        part_y = y + dist * math.sin(rad)
+        pygame.draw.circle(screen, (255, 255, 100), (int(part_x), int(part_y)), 3)
+
+def _draw_center_info(screen, scores, game_time, scoreboard_y):
     center_x = SCREEN_WIDTH // 2
     
     # Tempo de jogo
@@ -194,15 +230,12 @@ def draw_modern_scoreboard(screen, scores, current_player, game_time):
     if scores['X'] > scores['O']:
         diff_text = f"X +{diff}"
         diff_color = PLAYER_X_COLOR
-        leader = "X"
     elif scores['O'] > scores['X']:
         diff_text = f"O +{diff}"
         diff_color = PLAYER_O_COLOR
-        leader = "O"
     else:
         diff_text = "EMPATE"
         diff_color = WHITE
-        leader = None
     
     diff_bg = pygame.Rect(center_x - 80, scoreboard_y + 110, 160, 35)
     pygame.draw.rect(screen, (60, 60, 90), diff_bg, border_radius=8)
@@ -210,10 +243,12 @@ def draw_modern_scoreboard(screen, scores, current_player, game_time):
     draw_text(screen, diff_text, 26, center_x, scoreboard_y + 160, diff_color)
     
     # Barra de progresso
+    _draw_progress_bar(screen, scores, center_x, scoreboard_y)
+
+def _draw_progress_bar(screen, scores, center_x, scoreboard_y):
     total_points = scores['X'] + scores['O']
     if total_points > 0:
         x_percentage = (scores['X'] / total_points) * 100
-        o_percentage = (scores['O'] / total_points) * 100
         
         bar_width = 300
         bar_height = 20
@@ -231,111 +266,14 @@ def draw_modern_scoreboard(screen, scores, current_player, game_time):
         
         # Preenchimento O
         if scores['O'] > 0:
-            o_width = int((o_percentage / 100) * bar_width)
+            o_width = int(((100 - x_percentage) / 100) * bar_width)
             pygame.draw.rect(screen, PLAYER_O_COLOR, (bar_x + bar_width - o_width, bar_y, o_width, bar_height), border_radius=10)
         
         # Marcador do meio
         pygame.draw.line(screen, WHITE, (center_x, bar_y - 5), (center_x, bar_y + bar_height + 5), 3)
+LOGICA.PY
+from config import BOARD_SIZE
 
-def draw_board(screen, board, scores, current_player, game_time):
-    screen.fill(BG_COLOR)
-
-    # Fundo do tabuleiro
-    board_bg = pygame.Rect(BOARD_MARGIN - 10, -10, 620, 620)
-    pygame.draw.rect(screen, (40, 40, 60), board_bg, border_radius=15)
-    pygame.draw.rect(screen, (80, 80, 120), board_bg, 3, border_radius=15)
-
-    # Linhas do tabuleiro
-    for i in range(BOARD_SIZE + 1):
-        start_x = BOARD_MARGIN + i * CELL_SIZE
-        start_y = i * CELL_SIZE
-        end_x = BOARD_MARGIN + i * CELL_SIZE
-        end_y = BOARD_SIZE * CELL_SIZE
-        
-        pygame.draw.line(screen, LINE_COLOR, (start_x, 0), (end_x, end_y), 3)
-        pygame.draw.line(screen, LINE_COLOR, 
-                        (BOARD_MARGIN, start_y), 
-                        (BOARD_MARGIN + BOARD_SIZE * CELL_SIZE, start_y), 3)
-
-    # Símbolos
-    font = pygame.font.SysFont("arial", CELL_SIZE // 2, bold=True)
-    
-    for row in range(BOARD_SIZE):
-        for col in range(BOARD_SIZE):
-            if board[row][col] != "":
-                x_pos = BOARD_MARGIN + col * CELL_SIZE + CELL_SIZE//3
-                y_pos = row * CELL_SIZE + CELL_SIZE//4
-                
-                if board[row][col] == "X":
-                    shadow_color = (150, 30, 30)
-                    main_color = PLAYER_X_COLOR
-                else:
-                    shadow_color = (30, 80, 150)
-                    main_color = PLAYER_O_COLOR
-                
-                # Texto com sombra
-                shadow_text = font.render(board[row][col], True, shadow_color)
-                main_text = font.render(board[row][col], True, main_color)
-                
-                screen.blit(shadow_text, (x_pos + 2, y_pos + 2))
-                screen.blit(main_text, (x_pos, y_pos))
-
-    # Placar
-    draw_modern_scoreboard(screen, scores, current_player, game_time)
-
-def format_game_time(start_time):
-    elapsed = pygame.time.get_ticks() - start_time
-    seconds = elapsed // 1000
-    minutes = seconds // 60
-    seconds = seconds % 60
-    return f"{minutes:02d}:{seconds:02d}"
-
-# ================= MENU PRINCIPAL =================
-def main_menu(screen):
-    menu_running = True
-    
-    while menu_running:
-        screen.fill(MENU_BG_COLOR)
-        
-        # Título do jogo
-        draw_text(screen, "JOGO DA VELHA 9x9", 56, SCREEN_WIDTH//2, 120, WHITE)
-        draw_text(screen, "PLACAR SUPREMO", 36, SCREEN_WIDTH//2, 180, (255, 215, 0))
-        
-        # Botões do menu
-        play_button = draw_button(screen, "JOGAR", SCREEN_WIDTH//2 - 150, 280, 300, 70)
-        scores_button = draw_button(screen, "PLACARES", SCREEN_WIDTH//2 - 150, 370, 300, 70)
-        quit_button = draw_button(screen, "SAIR", SCREEN_WIDTH//2 - 150, 460, 300, 70)
-        
-        # Preview do placar
-        preview_rect = pygame.Rect(80, 550, SCREEN_WIDTH - 160, 200)
-        pygame.draw.rect(screen, SCORE_BG_COLOR, preview_rect, border_radius=20)
-        pygame.draw.rect(screen, SCORE_BORDER_COLOR, preview_rect, 4, border_radius=20)
-        
-        draw_text(screen, "PLACAR INTERATIVO", 28, SCREEN_WIDTH//2, 580, (255, 215, 0))
-        draw_text(screen, "• Tempo real • Progresso visual • Destaques animados", 20, SCREEN_WIDTH//2, 620, WHITE)
-        
-        # Mini placar
-        draw_text(screen, "X  8", 36, SCREEN_WIDTH//2 - 100, 680, PLAYER_X_COLOR)
-        draw_text(screen, "VS", 24, SCREEN_WIDTH//2, 680, WHITE)
-        draw_text(screen, "5  O", 36, SCREEN_WIDTH//2 + 100, 680, PLAYER_O_COLOR)
-        
-        pygame.display.flip()
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if play_button.collidepoint(event.pos):
-                    return "play"
-                elif scores_button.collidepoint(event.pos):
-                    return "scores"
-                elif quit_button.collidepoint(event.pos):
-                    pygame.quit()
-                    sys.exit()
-
-# ================= FUNÇÕES DO JOGO =================
 def check_new_triples(board, player, scored_positions):
     new_points = 0
     new_scored = []
@@ -379,54 +317,118 @@ def check_new_triples(board, player, scored_positions):
     return new_points, new_scored
 
 def is_board_full(board):
-    for row in board:
-        for cell in row:
-            if cell == "":
-                return False
-    return True
+    return all(cell != "" for row in board for cell in row)
+RENDER_BORDA.PY
+import pygame
+from config import *
+from ultilis import draw_text
+from pontos import draw_modern_scoreboard
 
-def game_loop(screen, scores_history):
-    board = [["" for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
-    current_player = "X"
-    scores = {"X": 0, "O": 0}
-    scored_positions = []
-    start_time = pygame.time.get_ticks()
+def draw_board(screen, board, scores, current_player, game_time):
+    screen.fill(BG_COLOR)
 
-    running = True
-    while running:
-        game_time = format_game_time(start_time)
-        draw_board(screen, board, scores, current_player, game_time)
+    # Fundo do tabuleiro
+    board_bg = pygame.Rect(BOARD_MARGIN - 10, -10, 620, 620)
+    pygame.draw.rect(screen, (40, 40, 60), board_bg, border_radius=15)
+    pygame.draw.rect(screen, (80, 80, 120), board_bg, 3, border_radius=15)
+
+    # Linhas do tabuleiro
+    _draw_grid_lines(screen)
+    
+    # Símbolos
+    _draw_symbols(screen, board)
+
+    # Placar
+    draw_modern_scoreboard(screen, scores, current_player, game_time)
+
+def _draw_grid_lines(screen):
+    for i in range(BOARD_SIZE + 1):
+        # Linhas verticais
+        x = BOARD_MARGIN + i * CELL_SIZE
+        pygame.draw.line(screen, LINE_COLOR, (x, 0), (x, BOARD_SIZE * CELL_SIZE), 3)
+        
+        # Linhas horizontais
+        y = i * CELL_SIZE
+        pygame.draw.line(screen, LINE_COLOR, 
+                        (BOARD_MARGIN, y), 
+                        (BOARD_MARGIN + BOARD_SIZE * CELL_SIZE, y), 3)
+
+def _draw_symbols(screen, board):
+    font = pygame.font.SysFont("arial", CELL_SIZE // 2, bold=True)
+    
+    for row in range(BOARD_SIZE):
+        for col in range(BOARD_SIZE):
+            if board[row][col] != "":
+                x_pos = BOARD_MARGIN + col * CELL_SIZE + CELL_SIZE//3
+                y_pos = row * CELL_SIZE + CELL_SIZE//4
+                
+                if board[row][col] == "X":
+                    shadow_color = (150, 30, 30)
+                    main_color = PLAYER_X_COLOR
+                else:
+                    shadow_color = (30, 80, 150)
+                    main_color = PLAYER_O_COLOR
+                
+                # Texto com sombra
+                shadow_text = font.render(board[row][col], True, shadow_color)
+                main_text = font.render(board[row][col], True, main_color)
+                
+                screen.blit(shadow_text, (x_pos + 2, y_pos + 2))
+                screen.blit(main_text, (x_pos, y_pos))
+TELAS.PY
+import pygame
+from config import *
+from ultilis import draw_text, draw_button
+from datetime import datetime
+
+def main_menu(screen):
+    menu_running = True
+    
+    while menu_running:
+        screen.fill(MENU_BG_COLOR)
+        
+        # Título do jogo
+        draw_text(screen, "JOGO DA VELHA 9x9", 56, SCREEN_WIDTH//2, 120, WHITE)
+        draw_text(screen, "PLACAR SUPREMO", 36, SCREEN_WIDTH//2, 180, (255, 215, 0))
+        
+        # Botões do menu
+        play_button = draw_button(screen, "JOGAR", SCREEN_WIDTH//2 - 150, 280, 300, 70)
+        scores_button = draw_button(screen, "PLACARES", SCREEN_WIDTH//2 - 150, 370, 300, 70)
+        quit_button = draw_button(screen, "SAIR", SCREEN_WIDTH//2 - 150, 460, 300, 70)
+        
+        # Preview do placar
+        _draw_score_preview(screen)
+        
         pygame.display.flip()
-
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
                 pygame.quit()
-                sys.exit()
-
+                return "quit"
+            
             if event.type == pygame.MOUSEBUTTONDOWN:
-                x, y = pygame.mouse.get_pos()
-                col = (x - BOARD_MARGIN) // CELL_SIZE
-                row = y // CELL_SIZE
+                if play_button.collidepoint(event.pos):
+                    return "play"
+                elif scores_button.collidepoint(event.pos):
+                    return "scores"
+                elif quit_button.collidepoint(event.pos):
+                    return "quit"
+    
+    return "quit"
 
-                if 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE:
-                    if board[row][col] == "":
-                        board[row][col] = current_player
-                        gained, new_scored = check_new_triples(board, current_player, scored_positions)
-                        scores[current_player] += gained
-                        scored_positions.extend(new_scored)
-                        
-                        if is_board_full(board):
-                            scores_history.append({
-                                'X': scores['X'],
-                                'O': scores['O'],
-                                'date': datetime.now().strftime("%H:%M %d/%m")
-                            })
-                            return "game_over"
-                        
-                        current_player = "O" if current_player == "X" else "X"
+def _draw_score_preview(screen):
+    preview_rect = pygame.Rect(80, 550, SCREEN_WIDTH - 160, 200)
+    pygame.draw.rect(screen, SCORE_BG_COLOR, preview_rect, border_radius=20)
+    pygame.draw.rect(screen, SCORE_BORDER_COLOR, preview_rect, 4, border_radius=20)
+    
+    draw_text(screen, "PLACAR INTERATIVO", 28, SCREEN_WIDTH//2, 580, (255, 215, 0))
+    draw_text(screen, "• Tempo real • Progresso visual • Destaques animados", 20, SCREEN_WIDTH//2, 620, WHITE)
+    
+    # Mini placar
+    draw_text(screen, "X  8", 36, SCREEN_WIDTH//2 - 100, 680, PLAYER_X_COLOR)
+    draw_text(screen, "VS", 24, SCREEN_WIDTH//2, 680, WHITE)
+    draw_text(screen, "5  O", 36, SCREEN_WIDTH//2 + 100, 680, PLAYER_O_COLOR)
 
-# ================= TELA DE PLACARES SIMPLES =================
 def scores_screen(screen, scores_history):
     scores_running = True
     
@@ -450,33 +452,10 @@ def scores_screen(screen, scores_history):
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                return False
             
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.collidepoint(event.pos):
                     scores_running = False
-
-# ================= MAIN =================
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Jogo da Velha 9x9 - PLACAR SUPREMO")
     
-    scores_history = []
-    
-    while True:
-        menu_choice = main_menu(screen)
-        
-        if menu_choice == "play":
-            game_result = game_loop(screen, scores_history)
-            # Tela de game over simples
-            if game_result == "game_over":
-                # Volta para o menu após o jogo
-                pass
-            
-        elif menu_choice == "scores":
-            scores_screen(screen, scores_history)
-
-if __name__ == "__main__":
-    main()
+    return True
