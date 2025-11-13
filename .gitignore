@@ -73,6 +73,11 @@ if __name__ == "__main__":
     game = Game()
     game.run()
 
+
+
+
+
+
 CONFIG.PY
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 900
@@ -92,6 +97,12 @@ BUTTON_HOVER_COLOR = (90, 90, 130)
 MENU_BG_COLOR = (35, 35, 55)
 SCORE_BG_COLOR = (40, 40, 70)
 SCORE_BORDER_COLOR = (120, 120, 180)
+
+
+
+
+
+
 ULTILIS.PY
 import pygame
 import math
@@ -128,6 +139,14 @@ def format_game_time(start_time):
     minutes = seconds // 60
     seconds = seconds % 60
     return f"{minutes:02d}:{seconds:02d}"
+
+
+
+
+
+
+
+
 PONTOS.PY
 import pygame
 import math
@@ -271,6 +290,18 @@ def _draw_progress_bar(screen, scores, center_x, scoreboard_y):
         
         # Marcador do meio
         pygame.draw.line(screen, WHITE, (center_x, bar_y - 5), (center_x, bar_y + bar_height + 5), 3)
+
+
+
+
+
+
+
+
+
+
+
+
 LOGICA.PY
 from config import BOARD_SIZE
 
@@ -318,6 +349,14 @@ def check_new_triples(board, player, scored_positions):
 
 def is_board_full(board):
     return all(cell != "" for row in board for cell in row)
+
+
+
+
+
+
+
+
 RENDER_BORDA.PY
 import pygame
 from config import *
@@ -375,6 +414,17 @@ def _draw_symbols(screen, board):
                 
                 screen.blit(shadow_text, (x_pos + 2, y_pos + 2))
                 screen.blit(main_text, (x_pos, y_pos))
+
+
+
+
+
+
+
+
+
+
+
 TELAS.PY
 import pygame
 from config import *
