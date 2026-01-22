@@ -2,14 +2,21 @@ import pygame
 from config import *
 from board import Board
 from draw import desenhar_tabuleiro, desenhar_marcas, destacar_bloco
+from menu import mostrar_menu   # 👈 MENU IMPORTADO
 
 pygame.init()
+
+# TELA
 tela = pygame.display.set_mode((TAMANHO_TELA, TAMANHO_TELA + 60))
 pygame.display.set_caption("Jogo da Velha 9x9")
+
+# MOSTRA O MENU ANTES DO JOGO COMEÇAR
+mostrar_menu(tela)
 
 clock = pygame.time.Clock()
 fonte = pygame.font.SysFont("arial", 28)
 
+# ESTADO DO JOGO
 board = Board()
 jogador = "X"
 fim_de_jogo = False
@@ -24,6 +31,7 @@ while rodando:
         if evento.type == pygame.QUIT:
             rodando = False
 
+        # REINICIAR JOGO
         if evento.type == pygame.KEYDOWN:
             if evento.key == pygame.K_r:
                 board = Board()
@@ -32,8 +40,10 @@ while rodando:
                 bloco_vencedor = None
                 mensagem = "Vez do jogador: X"
 
+        # JOGADA COM MOUSE
         if evento.type == pygame.MOUSEBUTTONDOWN and not fim_de_jogo:
             x, y = pygame.mouse.get_pos()
+
             if y < TAMANHO_TELA:
                 c = min(8, x // TAM_CELULA)
                 l = min(8, y // TAM_CELULA)
@@ -48,8 +58,8 @@ while rodando:
                         jogador = "O" if jogador == "X" else "X"
                         mensagem = f"Vez do jogador: {jogador}"
 
+    # DESENHO
     tela.fill(BRANCO)
-
     desenhar_tabuleiro(tela)
     desenhar_marcas(tela, board)
 
