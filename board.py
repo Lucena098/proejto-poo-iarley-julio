@@ -33,5 +33,13 @@ class Board:
             return g[bl][bc+2]
 
         return None
+           
+    def cheio(self):
+     for linha in self.grid:
+        if " " in linha:
+            return False
+     return True
+
+
 
 
