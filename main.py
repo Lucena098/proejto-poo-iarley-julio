@@ -1,107 +1,65 @@
 import pygame
-from config import *
-from board import Board
-from draw import desenhar_tabuleiro, desenhar_marcas, destacar_bloco
-from menu import mostrar_menu
+import sys
+from settings import
+
+
+# IMPORTAÇÃO EXPLÍCITA (SEM *)
+from settings import (
+    WIDTH, HEIGHT,
+    BG_COLOR, LINE_COLOR,
+    SCORE_BG
+)
 
 pygame.init()
-
-# TELA
-tela = pygame.display.set_mode((TAMANHO_TELA, TAMANHO_TELA + 60))
-pygame.display.set_caption("Jogo da Velha 9x9")
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Jogo da Velha 2")
 
 clock = pygame.time.Clock()
-fonte = pygame.font.SysFont("arial", 28)
+font = pygame.font.SysFont("arial", 48, bold=True)
 
-# PLACAR
-vitorias_x = 0
-vitorias_o = 0
+MENU = "menu"
+PLAYING = "playing"
+state = MENU
 
-# MOSTRA MENU
-mostrar_menu(tela)
+# botões
+play_rect = pygame.Rect(WIDTH//2 - 120, HEIGHT//2 - 40, 240, 70)
+exit_rect = pygame.Rect(WIDTH//2 - 120, HEIGHT//2 + 50, 240, 70)
 
-# ESTADO DO JOGO
-board = Board()
-jogador = "X"
-fim_de_jogo = False
-bloco_vencedor = None
-mensagem = "Vez do jogador: X"
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
 
-rodando = True
-while rodando:
+        if state == MENU and event.type == pygame.MOUSEBUTTONDOWN:
+            if play_rect.collidepoint(event.pos):
+                print("JOGAR clicado")  # debug
+                state = PLAYING
+            if exit_rect.collidepoint(event.pos):
+                pygame.quit()
+                sys.exit()
+
+    screen.fill(BG_COLOR)
+
+    if state == MENU:
+        title = font.render("JOGO DA VELHA 2", True, LINE_COLOR)
+        screen.blit(title, title.get_rect(center=(WIDTH//2, HEIGHT//3)))
+
+        pygame.draw.rect(screen, SCORE_BG, play_rect, border_radius=12)
+        pygame.draw.rect(screen, LINE_COLOR, play_rect, 3, border_radius=12)
+        screen.blit(
+            font.render("JOGAR", True, LINE_COLOR),
+            font.render("JOGAR", True, LINE_COLOR).get_rect(center=play_rect.center)
+        )
+
+        pygame.draw.rect(screen, SCORE_BG, exit_rect, border_radius=12)
+        pygame.draw.rect(screen, LINE_COLOR, exit_rect, 3, border_radius=12)
+        screen.blit(
+            font.render("SAIR", True, LINE_COLOR),
+            font.render("SAIR", True, LINE_COLOR).get_rect(center=exit_rect.center)
+        )
+
+    pygame.display.flip()
     clock.tick(60)
 
-    for evento in pygame.event.get():
-        if evento.type == pygame.QUIT:
-            rodando = False
 
-        if evento.type == pygame.KEYDOWN:
-            # REINICIAR PARTIDA
-            if evento.key == pygame.K_r:
-                board = Board()
-                jogador = "X"
-                fim_de_jogo = False
-                bloco_vencedor = None
-                mensagem = "Vez do jogador: X"
-
-            # VOLTAR AO MENU
-            if evento.key == pygame.K_ESCAPE:
-                mostrar_menu(tela)
-                board = Board()
-                jogador = "X"
-                fim_de_jogo = False
-                bloco_vencedor = None
-                mensagem = "Vez do jogador: X"
-
-        # JOGADA
-        if evento.type == pygame.MOUSEBUTTONDOWN and not fim_de_jogo:
-            x, y = pygame.mouse.get_pos()
-
-            if y < TAMANHO_TELA:
-                c = min(8, x // TAM_CELULA)
-                l = min(8, y // TAM_CELULA)
-
-                if board.definir(l, c, jogador):
-                    vencedor, bloco = board.verificar_vitoria()
-
-                    if vencedor:
-                        fim_de_jogo = True
-                        bloco_vencedor = bloco
-
-                        if vencedor == "X":
-                            vitorias_x += 1
-                        else:
-                            vitorias_o += 1
-
-                        mensagem = f"Jogador {vencedor} venceu! (R reinicia | ESC menu)"
-
-                    elif board.cheio():
-                        fim_de_jogo = True
-                        mensagem = "Empate! (R reinicia | ESC menu)"
-
-                    else:
-                        jogador = "O" if jogador == "X" else "X"
-                        mensagem = f"Vez do jogador: {jogador}"
-
-    # DESENHO
-    tela.fill(BRANCO)
-    desenhar_tabuleiro(tela)
-    desenhar_marcas(tela, board)
-
-    if bloco_vencedor:
-        destacar_bloco(tela, bloco_vencedor[0], bloco_vencedor[1])
-
-    # TEXTO
-    texto = fonte.render(mensagem, True, PRETO)
-    tela.blit(texto, (10, TAMANHO_TELA + 15))
-
-    placar = fonte.render(
-        f"X: {vitorias_x}  |  O: {vitorias_o}",
-        True,
-        PRETO
-    )
-    tela.blit(placar, (TAMANHO_TELA - 220, TAMANHO_TELA + 15))
-
-    pygame.display.update()
-
-pygame.quit()
