@@ -53,6 +53,5 @@ class BigBoard:
             return
 
         
-        # ✅ EMPATE GLOBAL
         if all(b.winner for row in self.boards for b in row):
             self.winner = "E"
