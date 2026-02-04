@@ -2,7 +2,7 @@
 import pygame
 from board import BigBoard
 
-# Cores
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (200, 200, 200)
@@ -16,14 +16,14 @@ class GameScreen:
     def __init__(self):
         self.board = BigBoard()
         self.current_player = "X"
-        self.active_board = None  # (linha, coluna)
+        self.active_board = None  
         self.winner = None
 
         pygame.font.init()
         self.font = pygame.font.SysFont(None, 36)
         self.big_font = pygame.font.SysFont(None, 120)
 
-        # Layout
+        
         self.small_size = 140
         self.cell_size = self.small_size // 3
         self.gap = 15
@@ -39,7 +39,7 @@ class GameScreen:
         self.btn_font = pygame.font.SysFont(None, 28)
 
 
-    # -------------------------------------------------
+    
 
     def click(self, pos):
         if self.winner:
@@ -76,7 +76,7 @@ class GameScreen:
                 sb.cells[r][c].value = self.current_player
                 sb.check_winner()
 
-                # define próximo tabuleiro
+            
                 if sb.winner == "E":
                     self.active_board = None
                 else:
@@ -103,7 +103,6 @@ class GameScreen:
                 bx = self.start_x + bc * (self.small_size + self.gap)
                 by = self.start_y + br * (self.small_size + self.gap)
 
-                # destaque do tabuleiro ativo
                 if self.active_board is None:
                     if not sb.winner:
                         pygame.draw.rect(
@@ -118,10 +117,9 @@ class GameScreen:
                         4
                     )
 
-                # borda do tabuleiro pequeno
                 pygame.draw.rect(screen, BLACK, (bx, by, self.small_size, self.small_size), 3)
 
-                # linhas internas 3x3
+
                 for i in range(1, 3):
                     pygame.draw.line(
                         screen, BLACK,
@@ -136,7 +134,7 @@ class GameScreen:
                         1
                     )
 
-                # X e O pequenos
+
                 for r in range(3):
                     for c in range(3):
                         cell = sb.cells[r][c]
@@ -150,7 +148,6 @@ class GameScreen:
                             )
                             screen.blit(txt, rect)
 
-        # símbolo grande (X, O ou E) — SEMPRE POR ÚLTIMO
                 if sb.winner:
                     color = RED if sb.winner in ("X", "O") else BLACK
                     big = self.big_font.render(sb.winner, True, color)
@@ -175,7 +172,7 @@ class GameScreen:
         if self.winner:
 
             overlay = pygame.Surface((WIDTH, HEIGHT))
-            overlay.set_alpha(140)  # transparência (0–255)
+            overlay.set_alpha(140)  
             overlay.fill((0, 0, 0))
             screen.blit(overlay, (0, 0))
 
