@@ -1,45 +1,69 @@
+from miniboard import MiniBoard
+from settings import *
+
 class Board:
     def __init__(self):
-        self.grid = [[" " for _ in range(9)] for _ in range(9)]
+        self.boards = [[MiniBoard() for _ in range(3)] for _ in range(3)]
+        self.active_board = (1, 1)
+        self.score = {"X": 0, "O": 0}
+        self.game_over = False
 
-    def obter(self, l, c):
-        return self.grid[l][c]
+    def draw(self, screen):
+        offset = SCORE_HEIGHT
 
-    def definir(self, l, c, v):
-        if self.grid[l][c] == " ":
-            self.grid[l][c] = v
-            return True
-        return False
+        for br in range(3):
+            for bc in range(3):
+                active = (
+                    not self.game_over and
+                    (self.active_board is None or (br, bc) == self.active_board)
+                )
+                self.boards[br][bc].draw(screen, br, bc, active, offset)
 
-    def verificar_vitoria(self):
-        for bl in range(0, 9, 3):
-            for bc in range(0, 9, 3):
-                vencedor = self._verificar_bloco(bl, bc)
-                if vencedor:
-                    return vencedor, (bl, bc)
-        return None, None
+        for i in range(1, 3):
+            pygame.draw.line(
+                screen,
+                LINE_COLOR,
+                (0, offset + i * 3 * CELL_SIZE),
+                (CELL_SIZE * 9, offset + i * 3 * CELL_SIZE),
+                6
+            )
+            pygame.draw.line(
+                screen,
+                LINE_COLOR,
+                (i * 3 * CELL_SIZE, offset),
+                (i * 3 * CELL_SIZE, offset + CELL_SIZE * 9),
+                6
+            )
 
-    def _verificar_bloco(self, bl, bc):
-        g = self.grid
-        for i in range(3):
-            if g[bl+i][bc] == g[bl+i][bc+1] == g[bl+i][bc+2] != " ":
-                return g[bl+i][bc]
-            if g[bl][bc+i] == g[bl+1][bc+i] == g[bl+2][bc+i] != " ":
-                return g[bl][bc+i]
-
-        if g[bl][bc] == g[bl+1][bc+1] == g[bl+2][bc+2] != " ":
-            return g[bl][bc]
-        if g[bl][bc+2] == g[bl+1][bc+1] == g[bl+2][bc] != " ":
-            return g[bl][bc+2]
-
-        return None
-           
-    def cheio(self):
-     for linha in self.grid:
-        if " " in linha:
+    def play(self, x, y, player):
+        y -= SCORE_HEIGHT
+        if y < 0 or y >= BOARD_HEIGHT:
             return False
-     return True
 
+        col = x // CELL_SIZE
+        row = y // CELL_SIZE
+
+        br, bc = row // 3, col // 3
+        cr, cc = row % 3, col % 3
+
+        if self.active_board and (br, bc) != self.active_board:
+            return False
+
+        board = self.boards[br][bc]
+
+        if board.play(cr, cc, player):
+            if board.winner:
+                self.score[player] += 1
+
+            next_board = (cr, cc)
+            if self.boards[next_board[0]][next_board[1]].winner:
+                self.active_board = None
+            else:
+                self.active_board = next_board
+
+            return True
+
+        return False
 
 
 
