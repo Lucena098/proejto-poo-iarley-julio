@@ -1,39 +1,42 @@
 import pygame
-from config import *
+import sys
+from settings import WIDTH, HEIGHT, BG_COLOR, LINE_COLOR, SCORE_BG
 
-def mostrar_menu(tela):
-    fonte_titulo = pygame.font.SysFont("arial", 48)
-    fonte_botao = pygame.font.SysFont("arial", 32)
+class Menu:
+    def __init__(self, screen):
+        self.screen = screen
+        self.title_font = pygame.font.SysFont("arial", 56, bold=True)
+        self.button_font = pygame.font.SysFont("arial", 36, bold=True)
 
-    botao_jogar = pygame.Rect(300, 300, 200, 50)
-    botao_sair = pygame.Rect(300, 370, 200, 50)
+        self.play_rect = pygame.Rect(WIDTH//2 - 120, HEIGHT//2 - 30, 240, 60)
+        self.exit_rect = pygame.Rect(WIDTH//2 - 120, HEIGHT//2 + 50, 240, 60)
 
-    while True:
-        tela.fill(BRANCO)
+    def draw(self):
+        self.screen.fill(BG_COLOR)
 
-        titulo = fonte_titulo.render("Jogo da Velha 9x9", True, PRETO)
-        tela.blit(titulo, titulo.get_rect(center=(TAMANHO_TELA // 2, 200)))
+        # título
+        title = self.title_font.render("JOGO DA VELHA 2", True, LINE_COLOR)
+        title_rect = title.get_rect(center=(WIDTH//2, HEIGHT//3))
+        self.screen.blit(title, title_rect)
 
-        pygame.draw.rect(tela, PRETO, botao_jogar, 2)
-        pygame.draw.rect(tela, PRETO, botao_sair, 2)
+        # botão jogar
+        pygame.draw.rect(self.screen, SCORE_BG, self.play_rect, border_radius=10)
+        pygame.draw.rect(self.screen, LINE_COLOR, self.play_rect, 3, border_radius=10)
+        play_text = self.button_font.render("JOGAR", True, LINE_COLOR)
+        self.screen.blit(play_text, play_text.get_rect(center=self.play_rect.center))
 
-        texto_jogar = fonte_botao.render("Jogar", True, PRETO)
-        texto_sair = fonte_botao.render("Sair", True, PRETO)
+        # botão sair
+        pygame.draw.rect(self.screen, SCORE_BG, self.exit_rect, border_radius=10)
+        pygame.draw.rect(self.screen, LINE_COLOR, self.exit_rect, 3, border_radius=10)
+        exit_text = self.button_font.render("SAIR", True, LINE_COLOR)
+        self.screen.blit(exit_text, exit_text.get_rect(center=self.exit_rect.center))
 
-        tela.blit(texto_jogar, texto_jogar.get_rect(center=botao_jogar.center))
-        tela.blit(texto_sair, texto_sair.get_rect(center=botao_sair.center))
-
-        pygame.display.update()
-
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.play_rect.collidepoint(event.pos):
+                return "play"
+            if self.exit_rect.collidepoint(event.pos):
                 pygame.quit()
-                exit()
+                sys.exit()
 
-            if evento.type == pygame.MOUSEBUTTONDOWN:
-                if botao_jogar.collidepoint(evento.pos):
-                    return  # sai do menu e começa o jogo
-
-                if botao_sair.collidepoint(evento.pos):
-                    pygame.quit()
-                    exit()
+        return None
